@@ -1,0 +1,7 @@
+cmake_minimum_required(VERSION 2.8)
+project(harris)
+find_package(OpenCV REQUIRED)
+add_executable(harris harris.cpp misc.cpp main.cpp)
+set(CMAKE_BUILD_TYPE Debug)
+include_directories(${OpenCV_INCLUDE_DIRS})
+target_link_libraries(harris ${OpenCV_LIBS})
