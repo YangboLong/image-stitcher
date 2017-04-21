@@ -1,0 +1,81 @@
+/// Copyright (C)
+///
+/// This program is free software; you can redistribute it and/or
+/// modify it under the terms of the GNU General Public License
+/// as published by the Free Software Foundation; either version 2
+/// of the License, or (at your option) any later version.
+///
+/// This program is distributed in the hope that it will be useful,
+/// but WITHOUT ANY WARRANTY; without even the implied warranty of
+/// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+/// GNU General Public License for more details.
+///
+/// You should have received a copy of the GNU General Public License
+/// along with this program; if not, write to the Free Software
+/// Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+///
+/// @File    descriptor.cpp
+/// @Brief   Form a descriptor at each feature point and select the top ones.
+/// @Author  Yangbo Long <yangbo.long.mav@gmail.com>
+/// @Version 0.1.0
+/// @Date    2017-04-16
+
+#include "descriptor.h"
+#include <numeric>
+
+Descriptor::Descriptor() {
+    patch_size_ = 13;
+    half_patch_size_ = patch_size_ / 2;
+}
+
+/// --------------------------------------------------------------------------
+/// @Brief   Extract fixed size image patches (13x13) around every feature
+///          point, form a descriptor simply by vectorizing the image pixel
+///          value in raster scan order.
+///
+/// @Param   pts, coordinates of feature points
+/// @Param   img, grayscale image
+/// --------------------------------------------------------------------------
+void Descriptor::vectorize(std::vector<CornerPoint> &pts, cv::Mat &img) {
+    int rows = pts.size();
+    for (int i = 0; i < rows; i++) {
+        int x = pts[i].point.x, y = pts[i].point.y;
+        std::vector<float> tmp;
+        for (int r = y - half_patch_size_; r <= y + half_patch_size_; r++) {
+            for (int c = x - half_patch_size_; c <= x + half_patch_size_; c++) {
+                if (r < 0 || r >= img.rows || c < 0 || c >= img.cols) {
+                    tmp.push_back(0);
+                } else {
+                    tmp.push_back(img.at<float>(r, c));
+                }
+            }
+        }
+        // each row represents the verctorized pixels of a patch
+        descriptors_.push_back(tmp);
+    }
+}
+
+/// --------------------------------------------------------------------------
+/// @Brief   Compute mean value and standard deviation for each descriptor.
+/// --------------------------------------------------------------------------
+void Descriptor::compute_mean_std() {
+    for (size_t i = 0; i < descriptors_.size(); i++) {
+        std::vector<float> v = descriptors_[i];
+        float sum = std::accumulate(v.begin(), v.end(), 0.0);
+        float mean = sum / v.size();
+        std::vector<float> diff(v.size());
+        std::transform(v.begin(), v.end(), diff.begin(),
+                [mean](float x) { return x - mean; });
+        float sq_sum = std::inner_product(diff.begin(), diff.end(), diff.begin(), 0.0);
+        float stdev = std::sqrt(sq_sum / v.size());
+
+        std::vector<float> tmp_mean, tmp_std;
+        for (int i = 0; i < patch_size_ * patch_size_; i++) {
+            tmp_mean.push_back(mean);
+            tmp_std.push_back(stdev);
+        }
+        mean_.push_back(tmp_mean);
+        std_.push_back(tmp_std);
+    }
+}
+
