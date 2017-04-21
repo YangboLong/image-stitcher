@@ -266,7 +266,7 @@ cv::Mat Harris::compute_harris_response(Derivatives &matrix) {
             float det = a11 * a22 - a12 * a21;
             float trace = a11 + a22;
 
-            response.at<float>(r, c) = abs(det - alpha_ * trace * trace);
+            response.at<float>(r, c) = fabs(det - alpha_ * trace * trace);
         }
     }
 

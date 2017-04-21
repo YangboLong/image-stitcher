@@ -27,7 +27,7 @@
 class Misc {
 public:
     static cv::Mat rgb2gray(cv::Mat &img);
-    static void display_image(cv::Mat &img);
+    static void display_image(cv::Mat &img, int i);
     static void print_mat(cv::Mat &img);
-    static void print_point(std::vector<cv::Point> p);
+    static void print_point(std::vector<cv::Point> &p);
 };

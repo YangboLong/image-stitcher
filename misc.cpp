@@ -21,6 +21,7 @@
 /// @Date    2017-04-05
 
 #include "misc.h"
+#include <string>
 
 cv::Mat Misc::rgb2gray(cv::Mat &img) {
     cv::Mat gray(img.rows, img.cols, CV_32F);
@@ -36,10 +37,10 @@ cv::Mat Misc::rgb2gray(cv::Mat &img) {
     return gray;
 }
 
-void Misc::display_image(cv::Mat &img) {
-    cv::namedWindow("image", CV_WINDOW_AUTOSIZE);
-    cv::imshow("image", img);
-    cv::waitKey(0);
+void Misc::display_image(cv::Mat &img, int i) {
+    std::string str = "image" + std::to_string(i);
+    cv::namedWindow(str, CV_WINDOW_AUTOSIZE);
+    cv::imshow(str, img);
 }
 
 void Misc::print_mat(cv::Mat &img) {
@@ -58,10 +59,11 @@ void Misc::print_mat(cv::Mat &img) {
         << " cols " << elem_count << " elements" << std::endl;
 }
 
-void print_point(std::vector<cv::Point> vp) {
+void Misc::print_point(std::vector<cv::Point> &vp) {
     for (size_t i = 0; i < vp.size(); i++) {
         cv::Point p = vp[i];
         std::cout << p.x << ", " << p.y << "; ";
     }
     std::cout << std::endl;
 }
+
