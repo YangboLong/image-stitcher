@@ -108,7 +108,8 @@ void normalize(std::vector<std::vector<float> > &corr) {
 std::vector<std::array<int, 2> >
 select_top(std::vector<std::vector<float> > &corr, int count) {
     std::vector<std::array<int, 2> > res;
-    int rows = corr.size(), cols = corr[0].size(), max_elem = 0;
+    int rows = corr.size(), cols = corr[0].size();
+    float max_elem = 0.0;
     for (int i = 0; i < count; i++) {
         std::array<int, 2> coordinates; // coordinates of max element in corr
         for (int r = 0; r < rows; r++) {
@@ -129,6 +130,9 @@ select_top(std::vector<std::vector<float> > &corr, int count) {
         }
         // save a top pair
         res.push_back(coordinates);
+
+        // look for next max element
+        max_elem = 0.0;
     }
     return res;
 }
