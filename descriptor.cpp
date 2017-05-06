@@ -39,10 +39,10 @@ Descriptor::Descriptor() {
 void Descriptor::vectorize(std::vector<CornerPoint> &pts, cv::Mat &img) {
     int rows = pts.size();
     for (int i = 0; i < rows; i++) {
-        int x = pts[i].point.x, y = pts[i].point.y;
+        int row = pts[i].point.x, col = pts[i].point.y;
         std::vector<float> tmp;
-        for (int r = y - half_patch_size_; r <= y + half_patch_size_; r++) {
-            for (int c = x - half_patch_size_; c <= x + half_patch_size_; c++) {
+        for (int r = row - half_patch_size_; r <= row + half_patch_size_; r++) {
+            for (int c = col - half_patch_size_; c <= col + half_patch_size_; c++) {
                 if (r < 0 || r >= img.rows || c < 0 || c >= img.cols) {
                     tmp.push_back(0);
                 } else {
