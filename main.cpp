@@ -37,33 +37,42 @@
 /// @Return  Correlation matrix
 /// --------------------------------------------------------------------------
 std::vector<std::vector<float> > correlate(Descriptor &des1, Descriptor &des2) {
-    std::vector<std::vector<float> > c1, c2;
+    // set up multithreaded computing
     int num_threads = std::max(1, omp_get_max_threads());
     omp_set_dynamic(0);
     omp_set_num_threads(num_threads);
-#pragma omp parallel for
-    for (size_t i = 0; i < des1.get_descriptors().size(); i++) {
+
+    // rows and columns of the descriptors_ matrix
+    size_t des1_rows = des1.get_descriptors().size();
+    size_t des1_cols = des1.get_descriptors()[0].size();
+    size_t des2_rows = des2.get_descriptors().size();
+    size_t des2_cols = des2.get_descriptors()[0].size();
+    std::vector<std::vector<float> > c1, c2;
+
+// #pragma omp parallel for
+    for (size_t i = 0; i < des1_rows; i++) {
         std::vector<float> tmp;
-        for (size_t j = 0; j < des1.get_descriptors()[0].size(); j++) {
-            tmp.push_back((des1.get_descriptors()[i][j] - des1.get_mean()[i][j]) /
-                    des1.get_std()[i][j]);
+        for (size_t j = 0; j < des1_cols; j++) {
+            tmp.push_back((des1.get_descriptors()[i][j] - des1.get_mean()[i]) /
+                    des1.get_std()[i]);
         }
         c1.push_back(tmp); // nx169
     }
-#pragma omp parallel for
-    for (size_t i = 0; i < des2.get_descriptors().size(); i++) {
+// #pragma omp parallel for
+    for (size_t i = 0; i < des2_rows; i++) {
         std::vector<float> tmp;
-        for (size_t j = 0; j < des2.get_descriptors()[0].size(); j++) {
-            tmp.push_back((des2.get_descriptors()[i][j] - des2.get_mean()[i][j]) /
-                    des2.get_std()[i][j]);
+        for (size_t j = 0; j < des2_cols; j++) {
+            tmp.push_back((des2.get_descriptors()[i][j] - des2.get_mean()[i]) /
+                    des2.get_std()[i]);
         }
         c2.push_back(tmp); // mx169
     }
 
     // c2 transpose, 169xm
-    std::vector<std::vector<float> > c2t(c2[0].size(), std::vector<float>(c2.size()));
-    for (size_t i = 0; i < c2.size(); i++) {
-        for (size_t j = 0; j < c2[0].size(); j++) {
+    size_t rows = c2[0].size(), cols = c2.size();
+    std::vector<std::vector<float> > c2t(rows, std::vector<float>(cols));
+    for (size_t i = 0; i < cols; i++) {
+        for (size_t j = 0; j < rows; j++) {
             c2t[j][i] = c2[i][j];
         }
     }
@@ -71,9 +80,9 @@ std::vector<std::vector<float> > correlate(Descriptor &des1, Descriptor &des2) {
     // correlation matrix, nxm
     std::vector<std::vector<float> > corr(c1.size(), std::vector<float>(c2.size()));
 #pragma omp parallel for
-    for (size_t i = 0; i < des1.get_descriptors().size(); i++) {
-        for (size_t j = 0; j < des2.get_descriptors().size(); j++) {
-            for (size_t k = 0; k < des1.get_descriptors()[0].size(); k++) {
+    for (size_t i = 0; i < des1_rows; i++) {
+        for (size_t j = 0; j < des2_rows; j++) {
+            for (size_t k = 0; k < des1_cols; k++) { // des1_cols = des2_cols, 169
                 corr[i][j] = fabs(c1[i][k] * c2t[k][j]); // absolute values
             }
         }
@@ -146,7 +155,7 @@ select_top(std::vector<std::vector<float> > &corr, int count) {
 /// @Return  return value
 /// --------------------------------------------------------------------------
 int main(int argc, char **argv) {
-    cv::Mat img_src1, img_src2, gray1, gray2;
+    cv::Mat img_src1, img_src2, gray1, gray2, g1, g2;
 
     if (argc <= 2) {
         std::cout << "Usage: ./stitcher [path/to/image1] [path/to/image2]" << std::endl;
@@ -158,13 +167,13 @@ int main(int argc, char **argv) {
 
     // convert color image to grayscale
     cvtColor(img_src1, gray1, CV_BGR2GRAY);
-    gray1.convertTo(gray1, CV_32F);
+    gray1.convertTo(g1, CV_32F);
     cvtColor(img_src2, gray2, CV_BGR2GRAY);
-    gray2.convertTo(gray2, CV_32F);
+    gray2.convertTo(g2, CV_32F);
 
     // run harris algorithm
-    Harris harris1(gray1);
-    Harris harris2(gray2);
+    Harris harris1(g1);
+    Harris harris2(g2);
     // local nonmaximum suppression
     float percentage = 0.001;
     std::vector<CornerPoint> pts1 = harris1.nonmax_suppression(percentage);
@@ -183,19 +192,19 @@ int main(int argc, char **argv) {
     // compute the correlation between every descriptor pair
     std::vector<std::vector<float> > corr = correlate(des1, des2);
     // normalize the correlation matrix
-    // normalize(corr);
+    normalize(corr);
 
-    // // select only the top max_count descriptor pairs
-    // int max_count = std::min<size_t>(100, std::min(pts1.size(), pts2.size()));
-    // std::vector<std::array<int, 2> > des_pairs = select_top(corr, max_count);
-    // // selected points coordinates in image
-    // std::vector<cv::Point> sel_pts1, sel_pts2;
-    // for (size_t i = 0; i < des_pairs.size(); i++) {
-    //     sel_pts1.push_back(pts1[des_pairs[i][0]].point);
-    //     sel_pts2.push_back(pts2[des_pairs[i][1]].point);
-    // }
-    // Misc::print_point(sel_pts1);
-    // Misc::print_point(sel_pts2);
+    // select only the top max_count descriptor pairs
+    int max_count = std::min<size_t>(100, std::min(pts1.size(), pts2.size()));
+    std::vector<std::array<int, 2> > des_pairs = select_top(corr, max_count);
+    // selected points coordinates in image
+    std::vector<cv::Point> sel_pts1, sel_pts2;
+    for (size_t i = 0; i < des_pairs.size(); i++) {
+        sel_pts1.push_back(pts1[des_pairs[i][0]].point);
+        sel_pts2.push_back(pts2[des_pairs[i][1]].point);
+    }
+    Misc::print_point(sel_pts1);
+    Misc::print_point(sel_pts2);
 
     return 0;
 }

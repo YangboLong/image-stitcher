@@ -74,22 +74,21 @@ void Descriptor::vectorize(std::vector<CornerPoint> &pts, cv::Mat &img) {
 /// --------------------------------------------------------------------------
 void Descriptor::compute_mean_std() {
     for (size_t i = 0; i < descriptors_.size(); i++) {
+        // compute mean value for one descriptor
         std::vector<float> v = descriptors_[i];
         float sum = std::accumulate(v.begin(), v.end(), 0.0);
         float mean = sum / v.size();
+
+        // compute standard deviation for one descriptor
         std::vector<float> diff(v.size());
         std::transform(v.begin(), v.end(), diff.begin(),
                 [mean](float x) { return x - mean; });
         float sq_sum = std::inner_product(diff.begin(), diff.end(), diff.begin(), 0.0);
         float stdev = std::sqrt(sq_sum / v.size());
 
-        std::vector<float> tmp_mean, tmp_std;
-        for (int i = 0; i < patch_size_ * patch_size_; i++) {
-            tmp_mean.push_back(mean);
-            tmp_std.push_back(stdev);
-        }
-        mean_.push_back(tmp_mean);
-        std_.push_back(tmp_std);
+        // save n values for all descriptors
+        mean_.push_back(mean);
+        std_.push_back(stdev);
     }
 }
 

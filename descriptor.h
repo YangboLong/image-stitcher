@@ -28,14 +28,17 @@ class Descriptor {
 public:
     Descriptor(std::vector<CornerPoint> &pts, cv::Mat &img);
     std::vector<std::vector<float> > get_descriptors() { return descriptors_; }
-    std::vector<std::vector<float> > get_mean() { return mean_; }
-    std::vector<std::vector<float> > get_std() { return std_; }
+    std::vector<float> get_mean() { return mean_; }
+    std::vector<float> get_std() { return std_; }
 
 private:
     int patch_size_;
     int half_patch_size_;
     std::vector<std::vector<float> > descriptors_; // nx169, n is number of corner points
-    std::vector<std::vector<float> > mean_; // nx169, 169 is from patch size
-    std::vector<std::vector<float> > std_; // nx169
+    std::vector<float> mean_; // size n, mean values for descriptors
+    std::vector<float> std_; //  size n, standard deviations for descriptors
+
+    void vectorize(std::vector<CornerPoint> &pts, cv::Mat &img);
+    void compute_mean_std();
 };
 
