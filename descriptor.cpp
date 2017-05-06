@@ -23,9 +23,23 @@
 #include "descriptor.h"
 #include <numeric>
 
-Descriptor::Descriptor() {
+/// --------------------------------------------------------------------------
+/// @Brief   Form descriptors around feature points and compute the mean value
+///          and standard deviation for them.
+///
+/// @Param   pts, corner points
+/// @Param   img, grayscale image
+/// --------------------------------------------------------------------------
+Descriptor::Descriptor(std::vector<CornerPoint> &pts, cv::Mat &img) {
+    // initialize descriptor patch parameters
     patch_size_ = 13;
     half_patch_size_ = patch_size_ / 2;
+
+    // form a descriptor by vectorizing an image patch
+    vectorize(pts, img);
+
+    // compute mean value and standard deviation for each descriptor
+    compute_mean_std();
 }
 
 /// --------------------------------------------------------------------------

@@ -26,9 +26,7 @@
 
 class Descriptor {
 public:
-    Descriptor();
-    void vectorize(std::vector<CornerPoint> &pts, cv::Mat &img);
-    void compute_mean_std();
+    Descriptor(std::vector<CornerPoint> &pts, cv::Mat &img);
     std::vector<std::vector<float> > get_descriptors() { return descriptors_; }
     std::vector<std::vector<float> > get_mean() { return mean_; }
     std::vector<std::vector<float> > get_std() { return std_; }

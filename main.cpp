@@ -175,12 +175,7 @@ int main(int argc, char **argv) {
     cv::waitKey(0);
 
     // form descriptors
-    Descriptor des1, des2;
-    des1.vectorize(pts1, gray1);
-    des2.vectorize(pts2, gray2);
-    // compute mean value and standard deviation for each descriptor
-    des1.compute_mean_std();
-    des2.compute_mean_std();
+    Descriptor des1(pts1, g1), des2(pts2, g2);
     // compute the correlation between every descriptor pair
     std::vector<std::vector<float> > corr = correlate(des1, des2);
     // normalize the correlation matrix
