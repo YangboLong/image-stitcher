@@ -83,11 +83,27 @@ std::vector<std::vector<float> > correlate(Descriptor &des1, Descriptor &des2) {
     for (size_t i = 0; i < des1_rows; i++) {
         for (size_t j = 0; j < des2_rows; j++) {
             for (size_t k = 0; k < des1_cols; k++) { // des1_cols = des2_cols, 169
-                corr[i][j] = fabs(c1[i][k] * c2t[k][j]); // absolute values
+                corr[i][j] += c1[i][k] * c2t[k][j];
             }
         }
     }
     return corr;
+}
+
+/// --------------------------------------------------------------------------
+/// @Brief   Compute the absolute values for the corr elements
+///
+/// @Param   corr, correlation matrix
+/// --------------------------------------------------------------------------
+void absolute(std::vector<std::vector<float> > &corr) {
+    size_t rows = corr.size(), cols = corr[0].size();
+    for (size_t i = 0; i < rows; i++) {
+        for (size_t j = 0; j < cols; j++) {
+            if (corr[i][j] < 0) {
+                corr[i][j] *= -1;
+            }
+        }
+    }
 }
 
 /// --------------------------------------------------------------------------
@@ -185,12 +201,13 @@ int main(int argc, char **argv) {
     // display result
     Misc::display_image(img_dst1, 1);
     Misc::display_image(img_dst2, 2);
-    cv::waitKey(0);
 
     // form descriptors
     Descriptor des1(pts1, g1), des2(pts2, g2);
     // compute the correlation between every descriptor pair
     std::vector<std::vector<float> > corr = correlate(des1, des2);
+    // compute the absolute values for the corr elements
+    absolute(corr);
     // normalize the correlation matrix
     normalize(corr);
 
@@ -206,6 +223,7 @@ int main(int argc, char **argv) {
     Misc::print_point(sel_pts1);
     Misc::print_point(sel_pts2);
 
+    cv::waitKey(0);
     return 0;
 }
 
