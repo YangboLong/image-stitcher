@@ -47,38 +47,34 @@ std::vector<std::vector<float> > correlate(Descriptor &des1, Descriptor &des2) {
     size_t des1_cols = des1.get_descriptors()[0].size();
     size_t des2_rows = des2.get_descriptors().size();
     size_t des2_cols = des2.get_descriptors()[0].size();
-    std::vector<std::vector<float> > c1, c2;
+    std::vector<std::vector<float> > c1(des1_rows, std::vector<float>(des1_cols));
+    std::vector<std::vector<float> > c2(des2_rows, std::vector<float>(des2_cols));
 
-// #pragma omp parallel for
+#pragma omp parallel for
     for (size_t i = 0; i < des1_rows; i++) {
-        std::vector<float> tmp;
         for (size_t j = 0; j < des1_cols; j++) {
-            tmp.push_back((des1.get_descriptors()[i][j] - des1.get_mean()[i]) /
-                    des1.get_std()[i]);
+            c1[i][j] = (des1.get_descriptors()[i][j] - des1.get_mean()[i])
+                / des1.get_std()[i]; // nx169
         }
-        c1.push_back(tmp); // nx169
     }
-// #pragma omp parallel for
+#pragma omp parallel for
     for (size_t i = 0; i < des2_rows; i++) {
-        std::vector<float> tmp;
         for (size_t j = 0; j < des2_cols; j++) {
-            tmp.push_back((des2.get_descriptors()[i][j] - des2.get_mean()[i]) /
-                    des2.get_std()[i]);
+            c2[i][j] = (des2.get_descriptors()[i][j] - des2.get_mean()[i])
+                / des2.get_std()[i]; // mx169
         }
-        c2.push_back(tmp); // mx169
     }
 
-    // c2 transpose, 169xm
-    size_t rows = c2[0].size(), cols = c2.size();
-    std::vector<std::vector<float> > c2t(rows, std::vector<float>(cols));
-    for (size_t i = 0; i < cols; i++) {
-        for (size_t j = 0; j < rows; j++) {
-            c2t[j][i] = c2[i][j];
+    std::vector<std::vector<float> > c2t(des2_cols, std::vector<float>(des2_rows));
+#pragma omp parallel for
+    for (size_t i = 0; i < des2_rows; i++) {
+        for (size_t j = 0; j < des2_cols; j++) {
+            c2t[j][i] = c2[i][j]; // c2 transpose, 169xm
         }
     }
 
     // correlation matrix, nxm
-    std::vector<std::vector<float> > corr(c1.size(), std::vector<float>(c2.size()));
+    std::vector<std::vector<float> > corr(des1_rows, std::vector<float>(des2_rows));
 #pragma omp parallel for
     for (size_t i = 0; i < des1_rows; i++) {
         for (size_t j = 0; j < des2_rows; j++) {
