@@ -38,7 +38,8 @@ Harris::Harris(cv::Mat &img) {
     alpha_ = 0.06;
 
     // patch size for nonmaximum suppression
-    patch_size_ = 15;
+    // patch_size_ = 15;
+    patch_size_ = 8;
 
     // compute Gaussian derivatives (sobel filter) at each pixel
     Derivatives derivs = compute_derivatives(img);
