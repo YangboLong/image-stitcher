@@ -30,4 +30,5 @@ public:
     static void display_image(cv::Mat &img, int i);
     static void print_mat(cv::Mat &img);
     static void print_point(std::vector<cv::Point> &p);
+    static void swap_coordinates(std::vector<cv::Point> &pts);
 };

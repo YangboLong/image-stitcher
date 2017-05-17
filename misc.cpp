@@ -67,3 +67,11 @@ void Misc::print_point(std::vector<cv::Point> &vp) {
     std::cout << std::endl;
 }
 
+void Misc::swap_coordinates(std::vector<cv::Point> &pts) {
+    for (auto &p : pts) {
+        auto tmp = p.x;
+        p.x = p.y;
+        p.y = tmp;
+    }
+}
+

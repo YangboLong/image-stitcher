@@ -216,6 +216,10 @@ int main(int argc, char **argv) {
         sel_pts1.push_back(pts1[des_pairs[i][0]].point);
         sel_pts2.push_back(pts2[des_pairs[i][1]].point);
     }
+    // swap x and y of coordinates to match the pixel coordinate
+    Misc::swap_coordinates(sel_pts1);
+    Misc::swap_coordinates(sel_pts2);
+    // print point coordinates
     Misc::print_point(sel_pts1);
     Misc::print_point(sel_pts2);
 
