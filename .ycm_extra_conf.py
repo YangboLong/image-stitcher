@@ -32,6 +32,9 @@ flags = [
     '-I', '/usr/lib/gcc/x86_64-linux-gnu/5/include',
     # for mpi
     '-I', '/usr/lib/openmpi/include',
+    # for eigen
+    '-I', '/home/ylong/Desktop/hobby_project/Image_Stitcher/image-stitcher/external/eigen',
+    '-I', '/home/ylong/Desktop/hobby_project/Image_Stitcher/image-stitcher/inc',
     '-I.',
 ]
 

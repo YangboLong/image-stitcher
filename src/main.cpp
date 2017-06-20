@@ -27,6 +27,9 @@
 #include "misc.h"
 #include <omp.h>
 
+#include "ransac.h"
+#include "fund_mat_model.h"
+
 /// --------------------------------------------------------------------------
 /// @Brief   Compute correlation between every descriptor in one image and
 ///          every descriptor in the other image.
@@ -36,7 +39,7 @@
 ///
 /// @Return  Correlation matrix
 /// --------------------------------------------------------------------------
-std::vector<std::vector<float> > correlate(Descriptor &des1, Descriptor &des2) {
+std::vector<std::vector<float>> correlate(Descriptor &des1, Descriptor &des2) {
     // set up multithreaded computing
     int num_threads = std::max(1, omp_get_max_threads());
     omp_set_dynamic(0);
@@ -47,8 +50,8 @@ std::vector<std::vector<float> > correlate(Descriptor &des1, Descriptor &des2) {
     size_t des1_cols = des1.get_descriptors()[0].size();
     size_t des2_rows = des2.get_descriptors().size();
     size_t des2_cols = des2.get_descriptors()[0].size();
-    std::vector<std::vector<float> > c1(des1_rows, std::vector<float>(des1_cols));
-    std::vector<std::vector<float> > c2(des2_rows, std::vector<float>(des2_cols));
+    std::vector<std::vector<float>> c1(des1_rows, std::vector<float>(des1_cols));
+    std::vector<std::vector<float>> c2(des2_rows, std::vector<float>(des2_cols));
 
 #pragma omp parallel for
     for (size_t i = 0; i < des1_rows; i++) {
@@ -65,7 +68,7 @@ std::vector<std::vector<float> > correlate(Descriptor &des1, Descriptor &des2) {
         }
     }
 
-    std::vector<std::vector<float> > c2t(des2_cols, std::vector<float>(des2_rows));
+    std::vector<std::vector<float>> c2t(des2_cols, std::vector<float>(des2_rows));
 #pragma omp parallel for
     for (size_t i = 0; i < des2_rows; i++) {
         for (size_t j = 0; j < des2_cols; j++) {
@@ -74,7 +77,7 @@ std::vector<std::vector<float> > correlate(Descriptor &des1, Descriptor &des2) {
     }
 
     // correlation matrix, nxm
-    std::vector<std::vector<float> > corr(des1_rows, std::vector<float>(des2_rows));
+    std::vector<std::vector<float>> corr(des1_rows, std::vector<float>(des2_rows));
 #pragma omp parallel for
     for (size_t i = 0; i < des1_rows; i++) {
         for (size_t j = 0; j < des2_rows; j++) {
@@ -91,7 +94,7 @@ std::vector<std::vector<float> > correlate(Descriptor &des1, Descriptor &des2) {
 ///
 /// @Param   corr, correlation matrix
 /// --------------------------------------------------------------------------
-void absolute(std::vector<std::vector<float> > &corr) {
+void absolute(std::vector<std::vector<float>> &corr) {
     size_t rows = corr.size(), cols = corr[0].size();
     for (size_t i = 0; i < rows; i++) {
         for (size_t j = 0; j < cols; j++) {
@@ -107,8 +110,8 @@ void absolute(std::vector<std::vector<float> > &corr) {
 ///
 /// @Param   corr, correlation matrix
 /// --------------------------------------------------------------------------
-void normalize(std::vector<std::vector<float> > &corr) {
-    std::vector<std::vector<float> > res;
+void normalize(std::vector<std::vector<float>> &corr) {
+    std::vector<std::vector<float>> res;
     for (size_t i = 0; i < corr.size(); i++) {
         float norm = sqrt(std::inner_product(corr[i].begin(), corr[i].end(),
                     corr[i].begin(), 0.0));
@@ -126,9 +129,9 @@ void normalize(std::vector<std::vector<float> > &corr) {
 ///
 /// @Return  Coordinates of the selected feature points
 /// --------------------------------------------------------------------------
-std::vector<std::array<int, 2> >
-select_top(std::vector<std::vector<float> > &corr, int count) {
-    std::vector<std::array<int, 2> > res;
+std::vector<std::array<int, 2>>
+select_top(std::vector<std::vector<float>> &corr, int count) {
+    std::vector<std::array<int, 2>> res;
     int rows = corr.size(), cols = corr[0].size();
     float max_elem = 0.0;
     for (int i = 0; i < count; i++) {
@@ -201,7 +204,7 @@ int main(int argc, char **argv) {
     // form descriptors
     Descriptor des1(pts1, g1), des2(pts2, g2);
     // compute the correlation between every descriptor pair
-    std::vector<std::vector<float> > corr = correlate(des1, des2);
+    std::vector<std::vector<float>> corr = correlate(des1, des2);
     // compute the absolute values for the corr elements
     absolute(corr);
     // normalize the correlation matrix
@@ -209,19 +212,43 @@ int main(int argc, char **argv) {
 
     // select only the top max_count descriptor pairs
     int max_count = std::min<size_t>(100, std::min(pts1.size(), pts2.size()));
-    std::vector<std::array<int, 2> > des_pairs = select_top(corr, max_count);
+    std::vector<std::array<int, 2>> des_pairs = select_top(corr, max_count);
     // selected points coordinates in image
     std::vector<cv::Point> sel_pts1, sel_pts2;
     for (size_t i = 0; i < des_pairs.size(); i++) {
         sel_pts1.push_back(pts1[des_pairs[i][0]].point);
         sel_pts2.push_back(pts2[des_pairs[i][1]].point);
     }
-    // swap x and y of coordinates to match the pixel coordinate
-    Misc::swap_coordinates(sel_pts1);
-    Misc::swap_coordinates(sel_pts2);
-    // print point coordinates
-    Misc::print_point(sel_pts1);
-    Misc::print_point(sel_pts2);
+    // // swap x and y of coordinates to match the pixel coordinate
+    // Misc::swap_coordinates(sel_pts1);
+    // Misc::swap_coordinates(sel_pts2);
+    // // print point coordinates
+    // // Misc::print_point(sel_pts1);
+    // // Misc::print_point(sel_pts2);
+    // 
+    // // convert 2d points to 3d homogeneous coordinates
+    // std::vector<cv::Point3i> sel_pts1_homo(max_count), sel_pts2_homo(max_count);
+    // convertPointsToHomogeneous(sel_pts1, sel_pts1_homo);
+    // convertPointsToHomogeneous(sel_pts1, sel_pts2_homo);
+
+    std::vector<std::shared_ptr<AbstrParam>> sel_pts1_homo, sel_pts2_homo;
+    for (int i = 0; i < max_count; i++) {
+        // note that x and y coordinates are swapped to match the pixel frame
+        std::shared_ptr<AbstrParam> cand_pt1
+            = std::make_shared<PointHomo>(sel_pts1[i].y, sel_pts1[i].x);
+        std::shared_ptr<AbstrParam> cand_pt2
+            = std::make_shared<PointHomo>(sel_pts2[i].y, sel_pts2[i].x);
+        sel_pts1_homo.push_back(cand_pt1);
+        sel_pts2_homo.push_back(cand_pt2);
+    }
+
+    RANSAC<FundMatModel, 8> estimator;
+    estimator.initialize(5000);
+    int start = cv::getTickCount();
+    estimator.estimate(sel_pts1_homo, sel_pts2_homo);
+    int end = cv::getTickCount();
+    std::cout << "RANSAC took: " << (float)(end - start) / cv::getTickFrequency()
+              << " s." << std::endl;
 
     cv::waitKey(0);
     return 0;
