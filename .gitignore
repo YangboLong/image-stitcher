@@ -1,0 +1,8 @@
+/build
+*.pyc
+/external
+/test
+
+# white list
+!/test/*.cpp
+!/test/*.h
