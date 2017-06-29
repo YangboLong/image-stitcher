@@ -191,18 +191,20 @@ int main(int argc, char **argv) {
     Harris harris2(g2);
     // local nonmaximum suppression
     float percentage = 0.001;
-    std::vector<CornerPoint> pts1 = harris1.nonmax_suppression(percentage);
-    std::vector<CornerPoint> pts2 = harris2.nonmax_suppression(percentage);
+    std::vector<CornerPoint> cpts1 = harris1.nonmax_suppression(percentage);
+    std::vector<CornerPoint> cpts2 = harris2.nonmax_suppression(percentage);
     // mark top corner points in image
     int marker_size = 5;
-    cv::Mat img_dst1 = harris1.mark_in_image(img_src1, pts1, marker_size);
-    cv::Mat img_dst2 = harris2.mark_in_image(img_src2, pts2, marker_size);
+    cv::Mat img_dst1 = harris1.mark_in_image(img_src1, cpts1,
+            marker_size, cv::Vec3b(0, 0, 255));
+    cv::Mat img_dst2 = harris2.mark_in_image(img_src2, cpts2,
+            marker_size, cv::Vec3b(0, 0, 255));
     // display result
     Misc::display_image(img_dst1, 1);
     Misc::display_image(img_dst2, 2);
 
     // form descriptors
-    Descriptor des1(pts1, g1), des2(pts2, g2);
+    Descriptor des1(cpts1, g1), des2(cpts2, g2);
     // compute the correlation between every descriptor pair
     std::vector<std::vector<float>> corr = correlate(des1, des2);
     // compute the absolute values for the corr elements
@@ -211,20 +213,20 @@ int main(int argc, char **argv) {
     normalize(corr);
 
     // select only the top max_count descriptor pairs
-    int max_count = std::min<size_t>(100, std::min(pts1.size(), pts2.size()));
+    int max_count = std::min<size_t>(100, std::min(cpts1.size(), cpts2.size()));
     std::vector<std::array<int, 2>> des_pairs = select_top(corr, max_count);
     // selected points coordinates in image
     std::vector<cv::Point> sel_pts1, sel_pts2;
     for (size_t i = 0; i < des_pairs.size(); i++) {
-        sel_pts1.push_back(pts1[des_pairs[i][0]].point);
-        sel_pts2.push_back(pts2[des_pairs[i][1]].point);
+        sel_pts1.push_back(cpts1[des_pairs[i][0]].point);
+        sel_pts2.push_back(cpts2[des_pairs[i][1]].point);
     }
     // // swap x and y of coordinates to match the pixel coordinate
     // Misc::swap_coordinates(sel_pts1);
     // Misc::swap_coordinates(sel_pts2);
-    // // print point coordinates
-    // // Misc::print_point(sel_pts1);
-    // // Misc::print_point(sel_pts2);
+    // print point coordinates
+    Misc::print_point(sel_pts1);
+    Misc::print_point(sel_pts2);
     // 
     // // convert 2d points to 3d homogeneous coordinates
     // std::vector<cv::Point3i> sel_pts1_homo(max_count), sel_pts2_homo(max_count);
@@ -249,6 +251,27 @@ int main(int argc, char **argv) {
     int end = cv::getTickCount();
     std::cout << "RANSAC took: " << (float)(end - start) / cv::getTickFrequency()
               << " s." << std::endl;
+    auto best_inliers = estimator.get_best_inliers();
+    // matched corner points
+    std::array<std::vector<CornerPoint>, 2> mpts;
+    for (int i = 0; i < 2; i++) {
+        for (auto& inlier : best_inliers[i]) {
+            CornerPoint cp;
+            auto pt = std::dynamic_pointer_cast<PointHomo>(inlier);
+            // swap coordinates to get back to the image frame
+            cp.point.x = pt->point_homo_[1];
+            cp.point.y = pt->point_homo_[0];
+            mpts[i].push_back(cp);
+        }
+    }
+
+    cv::Mat img_mcp1 = harris1.mark_in_image(img_dst1, mpts[0],
+            marker_size, cv::Vec3b(0, 255, 0));
+    cv::Mat img_mcp2 = harris2.mark_in_image(img_dst2, mpts[1],
+            marker_size, cv::Vec3b(0, 255, 0));
+    // display result
+    Misc::display_image(img_mcp1, 1);
+    Misc::display_image(img_mcp2, 2);
 
     cv::waitKey(0);
     return 0;
