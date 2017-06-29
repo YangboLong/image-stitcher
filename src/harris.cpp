@@ -280,18 +280,20 @@ cv::Mat Harris::compute_harris_response(Derivatives &matrix) {
 /// @Param   img, the source image
 /// @Param   pts, detected corner points
 /// @Param   dim, dimension of the cross marker
+/// @Param   col, color of the cross marker
 ///
 /// @Return  An image with corner points marked
 /// --------------------------------------------------------------------------
-cv::Mat Harris::mark_in_image(cv::Mat &img, std::vector<CornerPoint> &pts, int dim) {
+cv::Mat Harris::mark_in_image(cv::Mat &img, std::vector<CornerPoint> &pts,
+                              int dim, cv::Vec3b col) {
     cv::Mat ret;
     img.copyTo(ret);
 
-    for(std::vector<CornerPoint>::iterator it = pts.begin(); it != pts.end(); ++it) {
-        cv::Point center = (*it).point;
+    for(auto& pt : pts) {
+        cv::Point center = pt.point;
         for(int i = -dim; i <= dim; i++) {
-            ret.at<cv::Vec3b>(cv::Point(center.y, center.x + i)) = cv::Vec3b(0, 0, 255);
-            ret.at<cv::Vec3b>(cv::Point(center.y + i, center.x)) = cv::Vec3b(0, 0, 255);
+            ret.at<cv::Vec3b>(cv::Point(center.y, center.x + i)) = col;
+            ret.at<cv::Vec3b>(cv::Point(center.y + i, center.x)) = col;
         }
     }
 

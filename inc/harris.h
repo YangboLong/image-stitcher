@@ -45,7 +45,8 @@ class Harris {
 public:
     Harris(cv::Mat &img);
     std::vector<CornerPoint> nonmax_suppression(float percentage);
-    cv::Mat mark_in_image(cv::Mat &img, std::vector<CornerPoint> &pts, int dim);
+    cv::Mat mark_in_image(cv::Mat &img, std::vector<CornerPoint> &pts,
+                          int dim, cv::Vec3b col);
 
 private:
     int win_size_; // gaussian window size
