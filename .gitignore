@@ -1,8 +1,10 @@
 /build
 *.pyc
 /external
-/test
 
-# white list
+# ignore everying in path ./test
+/test/*
+# but not the files in the whitelist below
 !/test/*.cpp
 !/test/*.h
+!/test/*.jpg
