@@ -193,7 +193,7 @@ int main(int argc, char **argv) {
     float percentage = 0.001;
     std::vector<CornerPoint> cpts1 = harris1.nonmax_suppression(percentage);
     std::vector<CornerPoint> cpts2 = harris2.nonmax_suppression(percentage);
-    // mark top corner points in image
+    // mark top corner points in images
     int marker_size = 5;
     cv::Mat img_dst1 = harris1.mark_in_image(img_src1, cpts1,
             marker_size, cv::Vec3b(0, 0, 255));
@@ -221,17 +221,9 @@ int main(int argc, char **argv) {
         sel_pts1.push_back(cpts1[des_pairs[i][0]].point);
         sel_pts2.push_back(cpts2[des_pairs[i][1]].point);
     }
-    // // swap x and y of coordinates to match the pixel coordinate
-    // Misc::swap_coordinates(sel_pts1);
-    // Misc::swap_coordinates(sel_pts2);
     // print point coordinates
     Misc::print_point(sel_pts1);
     Misc::print_point(sel_pts2);
-    // 
-    // // convert 2d points to 3d homogeneous coordinates
-    // std::vector<cv::Point3i> sel_pts1_homo(max_count), sel_pts2_homo(max_count);
-    // convertPointsToHomogeneous(sel_pts1, sel_pts1_homo);
-    // convertPointsToHomogeneous(sel_pts1, sel_pts2_homo);
 
     std::vector<std::shared_ptr<AbstrParam>> sel_pts1_homo, sel_pts2_homo;
     for (int i = 0; i < max_count; i++) {
@@ -255,7 +247,7 @@ int main(int argc, char **argv) {
     // matched corner points
     std::array<std::vector<CornerPoint>, 2> mpts;
     for (int i = 0; i < 2; i++) {
-        for (auto& inlier : best_inliers[i]) {
+        for (auto &inlier : best_inliers[i]) {
             CornerPoint cp;
             auto pt = std::dynamic_pointer_cast<PointHomo>(inlier);
             // swap coordinates to get back to the image frame
@@ -265,6 +257,7 @@ int main(int argc, char **argv) {
         }
     }
 
+    // mark matched corner points in images
     cv::Mat img_mcp1 = harris1.mark_in_image(img_dst1, mpts[0],
             marker_size, cv::Vec3b(0, 255, 0));
     cv::Mat img_mcp2 = harris2.mark_in_image(img_dst2, mpts[1],

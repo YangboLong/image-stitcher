@@ -289,7 +289,7 @@ cv::Mat Harris::mark_in_image(cv::Mat &img, std::vector<CornerPoint> &pts,
     cv::Mat ret;
     img.copyTo(ret);
 
-    for(auto& pt : pts) {
+    for(auto &pt : pts) {
         cv::Point center = pt.point;
         for(int i = -dim; i <= dim; i++) {
             ret.at<cv::Vec3b>(cv::Point(center.y, center.x + i)) = col;
