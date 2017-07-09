@@ -186,6 +186,17 @@ public:
 
         // check if there are enough inliers
         if (inline_idx_.size() > thres_inliers_) {
+            // sort error in ascending order
+            std::vector<int> sorted_idx;
+            for (auto &i : sort_idx(err)) {
+                sorted_idx.push_back(i);
+            }
+            inline_idx_.clear();
+            for (size_t i = 0; i < 8; i++) {
+                inline_idx_.push_back(sorted_idx[i]);
+            }
+            std::sort(inline_idx_.begin(), inline_idx_.end());
+
             // indicate that they are roughly matched
             roughly_matched_ = true;
             // reset vectors to be ready for fine match
@@ -266,6 +277,19 @@ public:
         }
 
         return err_diag;
+    }
+
+    template <typename Type>
+    std::vector<size_t> sort_idx(const std::vector<Type> &v) {
+        // initialize original index locations
+        std::vector<size_t> idx(v.size());
+        iota(idx.begin(), idx.end(), 0);
+
+        // sort indices based on comparing values in v
+        sort(idx.begin(), idx.end(),
+             [&v](size_t i1, size_t i2) {return v[i1] < v[i2];});
+
+        return idx;
     }
 };
 

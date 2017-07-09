@@ -266,6 +266,37 @@ int main(int argc, char **argv) {
     Misc::display_image(img_mcp1, 1);
     Misc::display_image(img_mcp2, 2);
 
+    // estimate the affine transformation
+    RANSAC<AffineModel, 3> affine_estimator;
+    affine_estimator.initialize(5000);
+    start = cv::getTickCount();
+    affine_estimator.estimate(best_inliers[0], best_inliers[1]);
+    end = cv::getTickCount();
+    std::cout << "RANSAC took: " << (float)(end - start) / cv::getTickFrequency()
+              << " s to estimate the affine transformation." << std::endl;
+    best_inliers = affine_estimator.get_best_inliers();
+
+    // affine transformed corner points
+    std::array<std::vector<CornerPoint>, 2> aff_pts;
+    for (int i = 0; i < 2; i++) {
+        for (auto &inlier : best_inliers[i]) {
+            CornerPoint cp;
+            auto pt = std::dynamic_pointer_cast<PointHomo>(inlier);
+            // swap coordinates to get back to the image frame
+            cp.point.x = pt->point_homo_[1];
+            cp.point.y = pt->point_homo_[0];
+            aff_pts[i].push_back(cp);
+        }
+    }
+    // mark matched corner points in images
+    cv::Mat img_aff1 = harris1.mark_in_image(img_mcp1, aff_pts[0],
+            marker_size, cv::Vec3b(255, 0, 0));
+    cv::Mat img_aff2 = harris2.mark_in_image(img_mcp2, aff_pts[1],
+            marker_size, cv::Vec3b(255, 0, 0));
+    // display result
+    Misc::display_image(img_aff1, 1);
+    Misc::display_image(img_aff2, 2);
+
     cv::waitKey(0);
     return 0;
 }
