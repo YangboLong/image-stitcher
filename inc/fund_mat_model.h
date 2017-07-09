@@ -69,8 +69,8 @@ public:
     FundMatModel(std::vector<std::shared_ptr<AbstrParam>> inputs1,
                  std::vector<std::shared_ptr<AbstrParam>> inputs2,
                  std::vector<std::shared_ptr<AbstrParam>> pts1,
-                 std::vector<std::shared_ptr<AbstrParam>> pts2) :
-        num_pts_(pts1.size()) {
+                 std::vector<std::shared_ptr<AbstrParam>> pts2)
+        : num_pts_(pts1.size()) {
         // checking input parameters
         if (num_pts_ != pts2.size()) {
             throw std::runtime_error("FundMatModel: number of points wrong.");
@@ -144,7 +144,8 @@ public:
                 inliers_[1].push_back(inliers2_[i]);
             }
         } else {
-            error_ = 1.0;
+            error_ = std::numeric_limits<double>::max();
+            // error_ = 1.0;
         }
         return std::make_pair(error_, inliers_);
     }
@@ -251,20 +252,20 @@ public:
         for (size_t i = 0; i < num_pts; i++) {
             for (size_t j = 0; j < 3; j++) {
                 for (size_t k = 0; k < 3; k++) {
-                    tmp[i][j] += pts1[i]->point_homo_[k] * fund_mat_[k][j]; // 100x3 * 3x3
+                    tmp[i][j] += pts1[i]->point_homo_[k] * fund_mat_[k][j];
                 }
             }
         }
-        std::array<std::array<int, 100>, 3> pts2t; // transpose
+        std::vector<std::vector<int>> pts2t(3, std::vector<int>(num_pts));
         for (size_t i = 0; i < num_pts; i++) {
             for (size_t j = 0; j < 3; j++) {
-                pts2t[j][i] = pts2[i]->point_homo_[j]; // pts2 transpose, 3x100
+                pts2t[j][i] = pts2[i]->point_homo_[j]; // pts2 transpose
             }
         }
         for (size_t i = 0; i < num_pts; i++) {
             for (size_t j = 0; j < num_pts; j++) {
                 for (size_t k = 0; k < 3; k++) {
-                    err[i][j] += tmp[i][k] * pts2t[k][j]; // 100x3 * 3x100
+                    err[i][j] += tmp[i][k] * pts2t[k][j];
                 }
                 if (i == j) {
                     if (!roughly_matched_) {

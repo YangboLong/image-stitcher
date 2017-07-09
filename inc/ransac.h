@@ -40,7 +40,7 @@ private:
     std::vector<std::shared_ptr<AbstrParam>> data1_, data2_;
     // vector of all sampled models
     std::vector<std::shared_ptr<T>> sampled_models_;
-    double best_error_; // fund_mat_'s best error found so far
+    double best_error_; // model's best error found so far
     std::array<std::vector<std::shared_ptr<AbstrParam>>, 2> best_inliers_;
 
     // number of iterations before termination
@@ -67,7 +67,7 @@ public:
         data1_.clear();
         data2_.clear();
         sampled_models_.clear();
-        best_error_ = 1.0;
+        best_error_ = std::numeric_limits<double>::max();
         best_inliers_ = {};
     };
 
@@ -76,12 +76,12 @@ public:
     };
 
     const std::array<std::vector<std::shared_ptr<AbstrParam>>, 2>&
-        get_best_inliers(void) { return best_inliers_; };
+    get_best_inliers(void) { return best_inliers_; };
 
     bool estimate(std::vector<std::shared_ptr<AbstrParam>> data1,
                   std::vector<std::shared_ptr<AbstrParam>> data2) {
         if (data1.size() <= t_num_params | data2.size() <= t_num_params) {
-            std::cout << "RANSAC: Number of data points is too less." << std::endl;
+            std::cout << "RANSAC: Number of data points is too few." << std::endl;
             return false;
         }
 
@@ -118,7 +118,7 @@ public:
             std::shuffle(rd2.begin(), rd2.end(), rand_engines_[omp_get_thread_num()]);
             std::copy(rd2.begin(), rd2.begin() + t_num_params, rand_samples2.begin());
 
-            // call constructor of FundMatModel, derived class of AbstractModel
+            // call constructor of a derived class of AbstractModel
             std::shared_ptr<T> rand_model = std::make_shared<T>(
                     rand_samples1, rand_samples2, data1_, data2_);
             // call evaluate to check if the current model is the best so far

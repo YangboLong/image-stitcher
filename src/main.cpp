@@ -29,6 +29,7 @@
 
 #include "ransac.h"
 #include "fund_mat_model.h"
+#include "affine_model.h"
 
 /// --------------------------------------------------------------------------
 /// @Brief   Compute correlation between every descriptor in one image and
@@ -236,14 +237,16 @@ int main(int argc, char **argv) {
         sel_pts2_homo.push_back(cand_pt2);
     }
 
+    // estimate the fundamental matrix
     RANSAC<FundMatModel, 8> estimator;
     estimator.initialize(5000);
     int start = cv::getTickCount();
     estimator.estimate(sel_pts1_homo, sel_pts2_homo);
     int end = cv::getTickCount();
     std::cout << "RANSAC took: " << (float)(end - start) / cv::getTickFrequency()
-              << " s." << std::endl;
+              << " s to estimate the fundamental matrix." << std::endl;
     auto best_inliers = estimator.get_best_inliers();
+
     // matched corner points
     std::array<std::vector<CornerPoint>, 2> mpts;
     for (int i = 0; i < 2; i++) {
@@ -256,7 +259,6 @@ int main(int argc, char **argv) {
             mpts[i].push_back(cp);
         }
     }
-
     // mark matched corner points in images
     cv::Mat img_mcp1 = harris1.mark_in_image(img_dst1, mpts[0],
             marker_size, cv::Vec3b(0, 255, 0));
