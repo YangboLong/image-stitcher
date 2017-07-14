@@ -98,7 +98,7 @@ public:
         }
 
         // compute the affine transformation matrix
-        warp_mat_ = cv::getAffineTransform(tri1_, tri2_);
+        warp_mat_ = cv::getAffineTransform(tri2_, tri1_);
         // extend the 2x3 warp matrix to be 3x3 affine matrix
         extend_warp_mat();
     }
@@ -137,10 +137,12 @@ public:
         }
 
         // compute the second affine transformation
-        warp_mat_ = cv::getAffineTransform(tri1_, tri2_);
+        warp_mat_ = cv::getAffineTransform(tri2_, tri1_);
         // extend the 2x3 warp matrix to be 3x3 affine matrix
         extend_warp_mat();
 
+        // clear affine_diff_ before computing it again
+        affine_diff_.clear();
         // compute the affine difference again
         comp_affine_diff();
         for (auto &d : affine_diff_) { error_ += d; }
