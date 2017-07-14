@@ -243,9 +243,19 @@ int main(int argc, char **argv) {
     int start = cv::getTickCount();
     estimator.estimate(sel_pts1_homo, sel_pts2_homo);
     int end = cv::getTickCount();
-    std::cout << "RANSAC took: " << (float)(end - start) / cv::getTickFrequency()
+    std::cout << "RANSAC took " << (float)(end - start) / cv::getTickFrequency()
               << " s to estimate the fundamental matrix." << std::endl;
     auto best_inliers = estimator.get_best_inliers();
+
+    // print the fundamental matrix
+    auto fund_matrix = estimator.get_best_matrix();
+    std::cout << "Fundamental matrix:" << std::endl;
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
+            std::cout << fund_matrix[i][j] << " ";
+        }
+        std::cout << std::endl;
+    }
 
     // matched corner points
     std::array<std::vector<CornerPoint>, 2> mpts;
@@ -274,7 +284,7 @@ int main(int argc, char **argv) {
     start = cv::getTickCount();
     affine_estimator.estimate(best_inliers[0], best_inliers[1]);
     end = cv::getTickCount();
-    std::cout << "RANSAC took: " << (float)(end - start) / cv::getTickFrequency()
+    std::cout << "RANSAC took " << (float)(end - start) / cv::getTickFrequency()
               << " s to estimate the affine transformation." << std::endl;
     best_inliers = affine_estimator.get_best_inliers();
 

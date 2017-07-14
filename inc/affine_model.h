@@ -112,7 +112,9 @@ public:
     /// @Return  the error of the computed affine transformation using 3 pair of
     ///          points, and the 3 pair of points
     /// --------------------------------------------------------------------------
-    virtual std::pair<double, std::array<std::vector<std::shared_ptr<AbstrParam>>, 2>>
+    virtual std::tuple<double,
+                       std::array<std::vector<std::shared_ptr<AbstrParam>>, 2>,
+                       std::array<std::array<double, 3>, 3>>
     evaluate() override {
         // compute the affine difference of correspoinding points
         comp_affine_diff();
@@ -147,7 +149,8 @@ public:
             ldiff_[0].push_back(ldiff1_[i]);
             ldiff_[1].push_back(ldiff2_[i]);
         }
-        return std::make_pair(error_, ldiff_);
+
+        return std::make_tuple(error_, ldiff_, affine_mat_);
     }
 
     void comp_affine_diff() {

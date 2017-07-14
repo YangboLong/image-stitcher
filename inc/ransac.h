@@ -42,6 +42,7 @@ private:
     std::vector<std::shared_ptr<T>> sampled_models_;
     double best_error_; // model's best error found so far
     std::array<std::vector<std::shared_ptr<AbstrParam>>, 2> best_inliers_;
+    std::array<std::array<double, 3>, 3> best_matrix_;
 
     // number of iterations before termination
     int max_iters_;
@@ -75,8 +76,12 @@ public:
         max_iters_ = max_iters;
     };
 
-    const std::array<std::vector<std::shared_ptr<AbstrParam>>, 2>&
+    const std::array<std::vector<std::shared_ptr<AbstrParam>>, 2> &
     get_best_inliers(void) { return best_inliers_; };
+
+    const std::array<std::array<double, 3>, 3> &get_best_matrix(void) {
+        return best_matrix_;
+    }
 
     bool estimate(std::vector<std::shared_ptr<AbstrParam>> data1,
                   std::vector<std::shared_ptr<AbstrParam>> data2) {
@@ -94,6 +99,7 @@ public:
         std::vector<double> err(max_iters_);
         std::vector<std::array<std::vector<std::shared_ptr<AbstrParam>>, 2>>
             inliers_accum(max_iters_);
+        std::vector<std::array<std::array<double, 3>, 3>> model_matrix(max_iters_);
         sampled_models_.resize(max_iters_);
 
         // divide loop iterations between a group of spawned threads
@@ -122,10 +128,10 @@ public:
             std::shared_ptr<T> rand_model = std::make_shared<T>(
                     rand_samples1, rand_samples2, data1_, data2_);
             // call evaluate to check if the current model is the best so far
-            std::pair<double, std::array<std::vector<std::shared_ptr<AbstrParam>>, 2>>
-                eval_pair = rand_model->evaluate();
-            err[i] = eval_pair.first;
-            inliers_accum[i] = eval_pair.second;
+            auto eval_tuple = rand_model->evaluate();
+            err[i] = std::get<0>(eval_tuple);
+            inliers_accum[i] = std::get<1>(eval_tuple);
+            model_matrix[i] = std::get<2>(eval_tuple);
 
             // push back into history, could be removed later
             // sampled_models_[i] = rand_model;
@@ -135,6 +141,7 @@ public:
             if (err[i] < best_error_) {
                 best_error_ = err[i];
                 best_inliers_ = inliers_accum[i];
+                best_matrix_ = model_matrix[i];
             }
         }
 

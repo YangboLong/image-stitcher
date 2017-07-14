@@ -132,7 +132,9 @@ public:
     /// @Return  the error of the computed fundamental matrix using 8 pair of
     ///          points, and the 8 pair of points
     /// --------------------------------------------------------------------------
-    virtual std::pair<double, std::array<std::vector<std::shared_ptr<AbstrParam>>, 2>>
+    virtual std::tuple<double,
+                       std::array<std::vector<std::shared_ptr<AbstrParam>>, 2>,
+                       std::array<std::array<double, 3>, 3>>
     evaluate() override {
         // first step, rough match using all feature point pairs
         rough_match();
@@ -147,7 +149,7 @@ public:
             error_ = std::numeric_limits<double>::max();
             // error_ = 1.0;
         }
-        return std::make_pair(error_, inliers_);
+        return std::make_tuple(error_, inliers_, fund_mat_);
     }
 
     /// --------------------------------------------------------------------------

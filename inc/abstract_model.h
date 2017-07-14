@@ -52,8 +52,9 @@ public:
     virtual void
     initialize(std::vector<std::shared_ptr<AbstrParam>> inputs1,
                std::vector<std::shared_ptr<AbstrParam>> inputs2) = 0;
-    virtual std::pair<double, std::array<std::vector<std::shared_ptr<AbstrParam>>, 2>>
-    evaluate() = 0;
+    virtual std::tuple<double,
+                       std::array<std::vector<std::shared_ptr<AbstrParam>>, 2>,
+                       std::array<std::array<double, 3>, 3>> evaluate() = 0;
 
     virtual std::array<std::shared_ptr<AbstrParam>, t_num_params>
     get_model_params(void) { return min_model_params_; };
