@@ -309,6 +309,18 @@ int main(int argc, char **argv) {
     Misc::display_image(img_aff1, 1);
     Misc::display_image(img_aff2, 2);
 
+    // stitch two images together and display the panorama
+    auto affine_matrix = affine_estimator.get_best_matrix();
+    std::cout << "Affine transformation:" << std::endl;
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
+            std::cout << affine_matrix[i][j] << " ";
+        }
+        std::cout << std::endl;
+    }
+    cv::Mat pano = Misc::stitch_images(img_src1, img_src2, affine_matrix);
+    Misc::display_image(pano, 3);
+
     cv::waitKey(0);
     return 0;
 }

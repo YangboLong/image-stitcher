@@ -75,3 +75,68 @@ void Misc::swap_coordinates(std::vector<cv::Point> &pts) {
     }
 }
 
+cv::Mat Misc::stitch_images(cv::Mat &img1, cv::Mat &img2,
+        std::array<std::array<double, 3>, 3> &aff_mat) {
+    // construct an empty pano image to hold the stitching result
+    int height = std::max(img1.rows, img2.rows), width = img1.cols + img2.cols;
+    cv::Mat pano(height, width, CV_8UC3, cv::Scalar(0, 0,0));
+
+    // pixel coordinates in img2, homogeneous points
+    int height2 = img2.rows, width2 = img2.cols, pts = height2 * width2;
+    std::vector<std::vector<int>> img2_pts(pts, std::vector<int>(3));
+    int idx = 0;
+    for (int i = 0; i < width2; i++) {
+        for (int j = 0; j < height2; j++) {
+            img2_pts[idx][0] = i;
+            img2_pts[idx][1] = j;
+            img2_pts[idx][2] = 1;
+            idx++;
+        }
+    }
+
+    // apply affine transformation to pixel coordinates in img2
+    std::vector<std::vector<double>> new_img2_pts(3, std::vector<double>(pts));
+    std::vector<std::vector<int>> img2_pts_t(3, std::vector<int>(pts));
+    for (size_t i = 0; i < pts; i++) {
+        for (size_t j = 0; j < 3; j++) {
+            img2_pts_t[j][i] = img2_pts[i][j]; // img2_pts transpose
+        }
+    }
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < pts; j++) {
+            for (int k = 0; k < 3; k++) {
+                new_img2_pts[i][j] += aff_mat[i][k] * img2_pts_t[k][j];
+            }
+        }
+    }
+
+    // fill the top left of the pano image with img1
+    for (int i = 0; i < img1.rows; i++) {
+        for (int j = 0; j < img1.cols; j++) {
+            pano.at<cv::Vec3b>(i, j) = img1.at<cv::Vec3b>(i, j);
+        }
+    }
+
+    // blend pixels in the overlapping zone and stitch images
+    for (int i = 0; i < pts; i++) {
+        int r, c; // rows and cols in the pano image
+        double x = new_img2_pts[1][i], y = new_img2_pts[0][i];
+        if (x >= 0 && y >= 0 && x < height && y < width) {
+            r = (int)std::round(x);
+            c = (int)std::round(y);
+            // blend pixels in three channels separately
+            for (int ch = 0; ch < 3; ch++) {
+                if (c < img1.cols) { // overlapping zone
+                    pano.at<cv::Vec3b>(r, c)[ch] = (pano.at<cv::Vec3b>(r, c)[ch] +
+                            img2.at<cv::Vec3b>(img2_pts[i][1], img2_pts[i][0])[ch]) / 2;
+                } else { // non-overlapping portion in img2
+                    pano.at<cv::Vec3b>(r, c)[ch] =
+                        img2.at<cv::Vec3b>(img2_pts[i][1], img2_pts[i][0])[ch];
+                }
+            }
+        }
+    }
+
+    return pano;
+}
+

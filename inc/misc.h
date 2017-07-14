@@ -31,4 +31,6 @@ public:
     static void print_mat(cv::Mat &img);
     static void print_point(std::vector<cv::Point> &p);
     static void swap_coordinates(std::vector<cv::Point> &pts);
+    static cv::Mat stitch_images(cv::Mat &img1, cv::Mat &img2,
+            std::array<std::array<double, 3>, 3> &aff_mat);
 };
