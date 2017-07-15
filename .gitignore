@@ -8,3 +8,4 @@
 !/test/*.cpp
 !/test/*.h
 !/test/*.jpg
+!/test/*.png
