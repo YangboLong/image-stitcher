@@ -96,7 +96,7 @@ cv::Mat Misc::stitch_images(cv::Mat &img1, cv::Mat &img2,
     cv::Mat src2 = cv::Mat::zeros(height, width, img2.type());
 
     // apply the affine transform to img2
-    cv::warpAffine(img2, src2, warp_mat, src2.size() );
+    cv::warpAffine(img2, src2, warp_mat, src2.size());
 
     // blend two images
     for (int i = 0; i < height; i++) {
@@ -104,14 +104,11 @@ cv::Mat Misc::stitch_images(cv::Mat &img1, cv::Mat &img2,
             for (int ch = 0; ch < 3; ch++) {
                 if (src1.at<cv::Vec3b>(i, j)[ch] == 0) {
                     pano.at<cv::Vec3b>(i, j)[ch] = src2.at<cv::Vec3b>(i, j)[ch];
-                }
-                if (src2.at<cv::Vec3b>(i, j)[ch] == 0) {
+                } else if (src2.at<cv::Vec3b>(i, j)[ch] == 0) {
                     pano.at<cv::Vec3b>(i, j)[ch] = src1.at<cv::Vec3b>(i, j)[ch];
-                }
-                if (src1.at<cv::Vec3b>(i, j)[ch] != 0 &&
-                    src2.at<cv::Vec3b>(i, j)[ch] != 0) {
-                    pano.at<cv::Vec3b>(i, j)[ch] = (src1.at<cv::Vec3b>(i, j)[ch] +
-                            src2.at<cv::Vec3b>(i, j)[ch]) / 2;
+                } else { // overlapping zone
+                    pano.at<cv::Vec3b>(i, j)[ch] = (src1.at<cv::Vec3b>(i, j)[ch]
+                            + src2.at<cv::Vec3b>(i, j)[ch]) / 2;
                 }
             }
         }

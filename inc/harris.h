@@ -30,9 +30,9 @@ struct CornerPoint {
 };
 
 struct Derivatives {
-    cv::Mat Ix;
-    cv::Mat Iy;
-    cv::Mat Ixy; // Ix*Iy
+    cv::Mat ix;
+    cv::Mat iy;
+    cv::Mat ix_iy; // Ix*Iy
 };
 
 struct CompareResponse {

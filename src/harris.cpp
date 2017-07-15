@@ -38,8 +38,7 @@ Harris::Harris(cv::Mat &img) {
     alpha_ = 0.06;
 
     // patch size for nonmaximum suppression
-    // patch_size_ = 15;
-    patch_size_ = 8;
+    patch_size_ = 5;
 
     // compute Gaussian derivatives (sobel filter) at each pixel
     Derivatives derivs = compute_derivatives(img);
@@ -164,24 +163,24 @@ Derivatives Harris::compute_derivatives(cv::Mat &img) {
     }
 
     // apply Sobel filter to compute intensity gradients
-    cv::Mat Ix(img.rows - 2, img.cols - 2, CV_32F);
-    cv::Mat Iy(img.rows - 2, img.cols - 2, CV_32F);
-    cv::Mat Ixy(img.rows - 2, img.cols - 2, CV_32F);
+    cv::Mat ix(img.rows - 2, img.cols - 2, CV_32F);
+    cv::Mat iy(img.rows - 2, img.cols - 2, CV_32F);
+    cv::Mat ix_iy(img.rows - 2, img.cols - 2, CV_32F);
 
     for(int r = 0; r < img.rows - 2; r++) {
         for(int c = 0; c < img.cols - 2; c++) {
-            Ix.at<float>(r, c) = horizontal.at<float>(r, c) -
+            ix.at<float>(r, c) = horizontal.at<float>(r, c) -
                                  horizontal.at<float>(r + 2, c);
-            Iy.at<float>(r, c) = -vertical.at<float>(r, c) +
+            iy.at<float>(r, c) = -vertical.at<float>(r, c) +
                                   vertical.at<float>(r, c + 2);
-            Ixy.at<float>(r, c) = Ix.at<float>(r, c) * Iy.at<float>(r, c);
+            ix_iy.at<float>(r, c) = ix.at<float>(r, c) * iy.at<float>(r, c);
         }
     }
 
     Derivatives derivs;
-    derivs.Ix = Ix;
-    derivs.Iy = Iy;
-    derivs.Ixy = Ixy;
+    derivs.ix = ix;
+    derivs.iy = iy;
+    derivs.ix_iy = ix_iy;
 
     return derivs;
 }
@@ -228,7 +227,7 @@ cv::Mat Harris::gaussian_filter(cv::Mat &img) {
 
 /// --------------------------------------------------------------------------
 /// @Brief   Aapply Gaussian window function around each pixel to compute the
-///          second moment matrix components Ix, Iy, and Ixy.
+///          second moment matrix components Ix, Iy, and Ix*Iy.
 ///
 /// @Param   derivs
 /// @Param   filterRange
@@ -238,9 +237,9 @@ cv::Mat Harris::gaussian_filter(cv::Mat &img) {
 Derivatives Harris::second_moment_matrix(Derivatives &derivs) {
     Derivatives matrix;
 
-    matrix.Ix = gaussian_filter(derivs.Ix);
-    matrix.Iy = gaussian_filter(derivs.Iy);
-    matrix.Ixy = gaussian_filter(derivs.Ixy);
+    matrix.ix = gaussian_filter(derivs.ix);
+    matrix.iy = gaussian_filter(derivs.iy);
+    matrix.ix_iy = gaussian_filter(derivs.ix_iy);
 
     return matrix;
 }
@@ -253,16 +252,16 @@ Derivatives Harris::second_moment_matrix(Derivatives &derivs) {
 /// @Return  Harris response
 /// --------------------------------------------------------------------------
 cv::Mat Harris::compute_harris_response(Derivatives &matrix) {
-    cv::Mat response(matrix.Ix.rows, matrix.Ix.cols, CV_32F);
+    cv::Mat response(matrix.ix.rows, matrix.ix.cols, CV_32F);
 
-    for(int r = 0; r < matrix.Ix.rows; r++) {
-        for(int c = 0; c < matrix.Ix.cols; c++) {
+    for(int r = 0; r < matrix.ix.rows; r++) {
+        for(int c = 0; c < matrix.ix.cols; c++) {
             float a11, a12, a21, a22;
 
-            a11 = matrix.Ix.at<float>(r, c) * matrix.Ix.at<float>(r, c);
-            a12 = matrix.Ix.at<float>(r, c) * matrix.Iy.at<float>(r, c);
-            a21 = matrix.Ix.at<float>(r, c) * matrix.Iy.at<float>(r, c);
-            a22 = matrix.Iy.at<float>(r, c) * matrix.Iy.at<float>(r, c);
+            a11 = matrix.ix.at<float>(r, c) * matrix.ix.at<float>(r, c);
+            a12 = matrix.ix.at<float>(r, c) * matrix.iy.at<float>(r, c);
+            a21 = matrix.ix.at<float>(r, c) * matrix.iy.at<float>(r, c);
+            a22 = matrix.iy.at<float>(r, c) * matrix.iy.at<float>(r, c);
 
             float det = a11 * a22 - a12 * a21;
             float trace = a11 + a22;
