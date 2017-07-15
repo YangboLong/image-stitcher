@@ -38,9 +38,8 @@ class RANSAC {
 private:
     // all the data
     std::vector<std::shared_ptr<AbstrParam>> data1_, data2_;
-    // vector of all sampled models
-    std::vector<std::shared_ptr<T>> sampled_models_;
-    double best_error_; // model's best error found so far
+    // model's best error found so far
+    double best_error_;
     std::array<std::vector<std::shared_ptr<AbstrParam>>, 2> best_inliers_;
     std::array<std::array<double, 3>, 3> best_matrix_;
 
@@ -57,20 +56,10 @@ public:
             std::random_device SeedDevice;
             rand_engines_.push_back(std::mt19937(SeedDevice()));
         }
-
-        reset();
+        best_error_ = std::numeric_limits<double>::max();
     };
 
     virtual ~RANSAC(void) {};
-
-    // clear sampled models, etc. and prepare for next call
-    void reset(void) {
-        data1_.clear();
-        data2_.clear();
-        sampled_models_.clear();
-        best_error_ = std::numeric_limits<double>::max();
-        best_inliers_ = {};
-    };
 
     void initialize(int max_iters = 1000) {
         max_iters_ = max_iters;
@@ -100,14 +89,13 @@ public:
         std::vector<std::array<std::vector<std::shared_ptr<AbstrParam>>, 2>>
             inliers_accum(max_iters_);
         std::vector<std::array<std::array<double, 3>, 3>> model_matrix(max_iters_);
-        sampled_models_.resize(max_iters_);
 
         // divide loop iterations between a group of spawned threads
         int num_threads = std::max(1, omp_get_max_threads());
         omp_set_dynamic(0); // explicitly disable dynamic teams
         omp_set_num_threads(num_threads);
 
-        // Repeatedly call the FundMatModel's constructor and evaluate functions
+        // Repeatedly call the derived model's constructor and evaluate functions
         // in the for loop below, to obtain the best model using RANSAC algorithm.
 #pragma omp parallel for
         for (int i = 0; i < max_iters_; i++) {
@@ -132,9 +120,6 @@ public:
             err[i] = std::get<0>(eval_tuple);
             inliers_accum[i] = std::get<1>(eval_tuple);
             model_matrix[i] = std::get<2>(eval_tuple);
-
-            // push back into history, could be removed later
-            // sampled_models_[i] = rand_model;
         }
 
         for (int i = 0; i < max_iters_; i++) {
