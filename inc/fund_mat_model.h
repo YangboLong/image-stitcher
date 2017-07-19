@@ -190,15 +190,15 @@ public:
         // check if there are enough inliers
         if (inline_idx_.size() > thres_inliers_) {
             // sort error in ascending order
-            std::vector<int> sorted_idx;
-            for (auto &i : sort_idx(err)) {
-                sorted_idx.push_back(i);
-            }
-            inline_idx_.clear();
-            for (size_t i = 0; i < 8; i++) {
-                inline_idx_.push_back(sorted_idx[i]);
-            }
-            std::sort(inline_idx_.begin(), inline_idx_.end());
+            // std::vector<int> sorted_idx;
+            // for (auto &i : sort_idx(err)) {
+            //     sorted_idx.push_back(i);
+            // }
+            // inline_idx_.clear();
+            // for (size_t i = 0; i < 8; i++) {
+            //     inline_idx_.push_back(sorted_idx[i]);
+            // }
+            // std::sort(inline_idx_.begin(), inline_idx_.end());
 
             // indicate that they are roughly matched
             roughly_matched_ = true;

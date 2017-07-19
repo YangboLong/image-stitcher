@@ -223,8 +223,8 @@ int main(int argc, char **argv) {
         sel_pts2.push_back(cpts2[des_pairs[i][1]].point);
     }
     // print point coordinates
-    Misc::print_point(sel_pts1);
-    Misc::print_point(sel_pts2);
+    // Misc::print_point(sel_pts1);
+    // Misc::print_point(sel_pts2);
 
     std::vector<std::shared_ptr<AbstrParam>> sel_pts1_homo, sel_pts2_homo;
     for (int i = 0; i < max_count; i++) {
@@ -308,6 +308,8 @@ int main(int argc, char **argv) {
     // display result
     Misc::display_image(img_aff1, 1);
     Misc::display_image(img_aff2, 2);
+    cv::imwrite("img1_matched.png", img_aff1);
+    cv::imwrite("img2_matched.png", img_aff2);
 
     // stitch two images together and display the panorama
     auto affine_matrix = affine_estimator.get_best_matrix();
@@ -320,6 +322,7 @@ int main(int argc, char **argv) {
     }
     cv::Mat pano = Misc::stitch_images(img_src1, img_src2, affine_matrix);
     Misc::display_image(pano, 3);
+    cv::imwrite("pano.png", pano);
 
     cv::waitKey(0);
     return 0;
