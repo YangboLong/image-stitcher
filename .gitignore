@@ -1,6 +1,4 @@
-/build
 *.pyc
-/external
 
 # ignore everying in path ./test
 /test/*
