@@ -38,7 +38,7 @@ Harris::Harris(cv::Mat &img) {
     alpha_ = 0.06;
 
     // patch size for nonmaximum suppression
-    patch_size_ = 5;
+    patch_size_ = 3;
 
     // compute Gaussian derivatives (sobel filter) at each pixel
     Derivatives derivs = compute_derivatives(img);
@@ -128,14 +128,14 @@ Harris::nonmax_suppression(float percentage) {
 /// @Brief   Compute the gradient of image intensity I(x,y) around (x,y) by
 ///          approximating the partial derivative with finite differences:
 ///          Ix = [f(x+1, y) - f(x,y)] / 1, which is equvalent to correlating
-///          with a kernel [-1 1]. Sobel filter is another approximation.
+///          with a kernel [-1 1]. Sobel filter is another approximation and
+///          is used for the implementation here.
 ///
 /// @Param   img, grayscale image
 ///
 /// @Return  Intensity gradient Ix, Iy, and Ix*Iy
 /// --------------------------------------------------------------------------
 Derivatives Harris::compute_derivatives(cv::Mat &img) {
-    // use separable 2d convolution to reduce time complexity
     // vertical direction
     cv::Mat vertical(img.rows - 2, img.cols, CV_32F);
     for(int r = 1; r < img.rows - 1; r++) {
@@ -145,7 +145,8 @@ Derivatives Harris::compute_derivatives(cv::Mat &img) {
             float a2 = img.at<float>(r, c);
             float a3 = img.at<float>(r + 1, c);
 
-            vertical.at<float>(r - 1, c) = a1 + 2 * a2 + a3;
+            // vertical.at<float>(r - 1, c) = a1 + 2 * a2 + a3;
+            vertical.at<float>(r - 1, c) = a1 + a2 + a3;
         }
     }
 
@@ -158,29 +159,34 @@ Derivatives Harris::compute_derivatives(cv::Mat &img) {
             float a2 = img.at<float>(r, c);
             float a3 = img.at<float>(r, c + 1);
 
-            horizontal.at<float>(r, c - 1) = a1 + 2 * a2 + a3;
+            // horizontal.at<float>(r, c - 1) = a1 + 2 * a2 + a3;
+            horizontal.at<float>(r, c - 1) = a1 + a2 + a3;
         }
     }
 
     // apply Sobel filter to compute intensity gradients
-    cv::Mat ix(img.rows - 2, img.cols - 2, CV_32F);
-    cv::Mat iy(img.rows - 2, img.cols - 2, CV_32F);
-    cv::Mat ix_iy(img.rows - 2, img.cols - 2, CV_32F);
+    cv::Mat ix2(img.rows - 2, img.cols - 2, CV_32F);
+    cv::Mat iy2(img.rows - 2, img.cols - 2, CV_32F);
+    cv::Mat ixy(img.rows - 2, img.cols - 2, CV_32F);
 
     for(int r = 0; r < img.rows - 2; r++) {
         for(int c = 0; c < img.cols - 2; c++) {
-            ix.at<float>(r, c) = horizontal.at<float>(r, c) -
+            // intensity derivatives Ix, Iy, and Ix*Iy
+            ix2.at<float>(r, c) = -horizontal.at<float>(r, c) +
                                  horizontal.at<float>(r + 2, c);
-            iy.at<float>(r, c) = -vertical.at<float>(r, c) +
+            iy2.at<float>(r, c) = -vertical.at<float>(r, c) +
                                   vertical.at<float>(r, c + 2);
-            ix_iy.at<float>(r, c) = ix.at<float>(r, c) * iy.at<float>(r, c);
+            ixy.at<float>(r, c) = ix2.at<float>(r, c) * iy2.at<float>(r, c);
+            // Ix*Ix, Iy*Iy
+            ix2.at<float>(r, c) *= ix2.at<float>(r, c);
+            iy2.at<float>(r, c) *= iy2.at<float>(r, c);
         }
     }
 
     Derivatives derivs;
-    derivs.ix = ix;
-    derivs.iy = iy;
-    derivs.ix_iy = ix_iy;
+    derivs.ix2 = ix2;
+    derivs.iy2 = iy2;
+    derivs.ixy = ixy;
 
     return derivs;
 }
@@ -237,9 +243,9 @@ cv::Mat Harris::gaussian_filter(cv::Mat &img) {
 Derivatives Harris::second_moment_matrix(Derivatives &derivs) {
     Derivatives matrix;
 
-    matrix.ix = gaussian_filter(derivs.ix);
-    matrix.iy = gaussian_filter(derivs.iy);
-    matrix.ix_iy = gaussian_filter(derivs.ix_iy);
+    matrix.ix2 = gaussian_filter(derivs.ix2);
+    matrix.iy2 = gaussian_filter(derivs.iy2);
+    matrix.ixy = gaussian_filter(derivs.ixy);
 
     return matrix;
 }
@@ -252,16 +258,16 @@ Derivatives Harris::second_moment_matrix(Derivatives &derivs) {
 /// @Return  Harris response
 /// --------------------------------------------------------------------------
 cv::Mat Harris::compute_harris_response(Derivatives &matrix) {
-    cv::Mat response(matrix.ix.rows, matrix.ix.cols, CV_32F);
+    cv::Mat response(matrix.ix2.rows, matrix.ix2.cols, CV_32F);
 
-    for(int r = 0; r < matrix.ix.rows; r++) {
-        for(int c = 0; c < matrix.ix.cols; c++) {
+    for(int r = 0; r < matrix.ix2.rows; r++) {
+        for(int c = 0; c < matrix.ix2.cols; c++) {
             float a11, a12, a21, a22;
 
-            a11 = matrix.ix.at<float>(r, c) * matrix.ix.at<float>(r, c);
-            a12 = matrix.ix.at<float>(r, c) * matrix.iy.at<float>(r, c);
-            a21 = matrix.ix.at<float>(r, c) * matrix.iy.at<float>(r, c);
-            a22 = matrix.iy.at<float>(r, c) * matrix.iy.at<float>(r, c);
+            a11 = matrix.ix2.at<float>(r, c);
+            a12 = matrix.ixy.at<float>(r, c);
+            a21 = matrix.ixy.at<float>(r, c);
+            a22 = matrix.iy2.at<float>(r, c);
 
             float det = a11 * a22 - a12 * a21;
             float trace = a11 + a22;
@@ -278,8 +284,8 @@ cv::Mat Harris::compute_harris_response(Derivatives &matrix) {
 ///
 /// @Param   img, the source image
 /// @Param   pts, detected corner points
-/// @Param   dim, dimension of the cross marker
-/// @Param   col, color of the cross marker
+/// @Param   dim, dimension of the plus mark
+/// @Param   col, color of the plus mark
 ///
 /// @Return  An image with corner points marked
 /// --------------------------------------------------------------------------
