@@ -1,7 +1,7 @@
 # image-stitcher
 
 This is an image stitching program that is written in C++ from scratch. It can stitch two images to be a panorama. 
-It serves as a good practice for me by using and implementing some fundamental computer vision algorithms that I learnt 
+It serves as good exercise for me by implementing some fundamental computer vision algorithms that I learnt 
 in university a few years ago.
 
 ## Development Toolchain
